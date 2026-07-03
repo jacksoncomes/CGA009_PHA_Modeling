@@ -1,0 +1,21 @@
+# Python environment for the R. palustris CGA009 CRISPRi/PHB Release
+# Verified working set (the exact versions this Release was reproduced with on Python 3.12.4, Windows 11).
+# cobra is pinned because solver/FVA behavior is the load-bearing dependency; the others are pinned to the
+# versions used for the byte-identical reproduction. GLPK ships with cobra/optlang (swiglpk) — no extra
+# solver install is required.
+
+cobra==0.31.1
+optlang==1.9.1
+swiglpk           # GLPK bindings (pulled in by optlang; the default LP/MILP solver used here)
+
+numpy==2.4.6
+pandas==2.3.3
+scipy==1.18.0
+sympy==1.14.0
+matplotlib==3.11.0
+
+# notebook generation + headless execution
+nbformat==5.10.4
+nbconvert==7.16.6
+ipykernel==6.30.0
+jupyter-client>=8
