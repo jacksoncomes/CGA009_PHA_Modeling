@@ -2,7 +2,7 @@
 
 A minimal, reproducible release of the genome-scale modeling pipeline that nominates single-gene
 **CRISPRi down-regulation targets** to increase PHB/PHA production in *Rhodopseudomonas palustris* CGA009
-(model **iAN1128**; Alsiyabi, Immethun & Saha 2019) growing on **p-coumarate**, for a DBTL round-0 screen.
+(model **iAN1128**; Navid 2019) growing on **p-coumarate**, for a DBTL round-0 screen.
 
 **The whole release leads to one figure:**
 [`Results/nb60_targets/figures/nb71_downselected.png`](Results/nb60_targets/figures/nb71_downselected.png)
