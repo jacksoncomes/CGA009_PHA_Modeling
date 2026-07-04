@@ -1,31 +1,28 @@
 reaction,gene,subsystem,name,methods,n_methods,consensus_score,FVSEOF_q_slope,FluxRETAP_flux_diff,CASOP_ko_score,module,source,brightness
-R01196,RPA4721,Citrate cycle (TCA cycle),pyruvate:ferredoxin 2-oxidoreductase (CoA-acetylating),FVSEOF|FluxRETAP|CASOP,3,1.7986,-0.2720988956244547,0.0595330352706933,0.0689520758222445,redox,sharp,0.6097749537963828
-R00921,RPA4567,Propanoate metabolism,acetyl-CoAphosphate acetyltransferase,FVSEOF|FluxRETAP|CASOP,3,1.3602,-0.1513482253244988,0.1948998178506375,0.0339316457721871,accoa,sharp,0.4617513342558811
-R00835,RPA3636,Pentose phosphate pathway,D-Glucose-6-phosphateNADP+ 1-oxoreductase,FVSEOF|FluxRETAP|CASOP,3,0.7112,-0.1131337191191107,0.0594609613781671,0.0325646751985965,ppp,fill,0.17244940709314244
-R00127,RPA3229,Purine metabolism,ATPAMP phosphotransferase,FluxRETAP|CASOP,2,1.4751,,0.1336212725003004,0.069179421442487,nuc,sharp,0.4914720466930563
-R00351,RPA2907,Citrate cycle (TCA cycle),Citrate oxaloacetate-lyase ((pro-3S)-CH2COO- - acetyl-CoA),FVSEOF|CASOP,2,1.4011,-0.1337602702724465,,0.0494669390881853,accoa,sharp,0.22919465129089717
+R01196,RPA4721,Citrate cycle (TCA cycle),pyruvate:ferredoxin 2-oxidoreductase (CoA-acetylating),FVSEOF|FluxRETAP|CASOP,3,1.8971,-0.2720988956244547,0.0595330352706933,0.0619491626370186,redox,sharp,0.6097749537963828
+R00835,RPA3636,Pentose phosphate pathway,D-Glucose-6-phosphateNADP+ 1-oxoreductase,FVSEOF|FluxRETAP|CASOP,3,0.8627,-0.1131337191191107,0.0594609613781671,0.0325762358663033,ppp,fill,0.17244940709314244
 R00004,RPA0411,Oxidative phosphorylation,Pyrophosphate phosphohydrolase (soluble),FVSEOF|FluxRETAP,2,1.0,-0.4139433266534468,0.1461748633881841,,nuc,sharp,1.0
 R00206,RPA1051,Pyruvate metabolism,"ATPpyruvate,orthophosphate phosphotransferase",FVSEOF|FluxRETAP,2,0.9608,-0.2270209431613147,0.194899817850719,,backbone,sharp,0.48576200556087623
 R04386,RPA0071,Fatty acid biosynthesis,Acetyl-CoAcarbon-dioxide ligase (ADP-forming),FVSEOF|FluxRETAP,2,0.9412,-0.1652940487519117,0.146174863387978,,accoa,sharp,0.3159465249799588
 R01821,RPA4727,Starch and sucrose metabolism,cpd00155 phosphorylase,FVSEOF|FluxRETAP,2,0.9245,-0.1513482253216302,0.1948998178506376,,other,sharp,0.4617513342558815
+R00921,RPA4567,Propanoate metabolism,acetyl-CoAphosphate acetyltransferase,FVSEOF|FluxRETAP,2,0.9057,-0.1513482253244988,0.1948998178506375,,accoa,sharp,0.4617513342558811
 R01257,RPA1331,Pyruvate metabolism,(S)-Malate(acceptor) oxidoreductase,FVSEOF|FluxRETAP,2,0.8868,-0.1297270502757704,0.1670569867291177,,tca,sharp,0.37121960861842257
 R01253,RPA1580,Arginine and proline metabolism,Proline dehydrogenase,FVSEOF|FluxRETAP,2,0.8679,-0.1297270502788112,0.1670569867291166,,aa,sharp,0.37121960861841896
 R01515,RPA3173,Pyruvate metabolism,3-Phospho-D-glyceroyl phosphate phosphohydrolase,FVSEOF|FluxRETAP,2,0.8113,-0.1135111689930467,0.1461748633879821,,backbone,fill,0.3033208143903425
 R00019,RPA0962,Hydrogen biosynthesis,hydrogen:ferredoxin oxidoreductase,FVSEOF|FluxRETAP,2,0.7736,-0.1135111689926594,0.1461748633879784,,redox,fill,0.3033208143903304
 R00706,RPA3450,Inositol metabolism,"3-Oxopropanoate:NADP+ oxidoreductase (decarboxylating, CoA-acetylating)",FVSEOF|FluxRETAP,2,0.7358,-0.1135111689912987,0.1461748633879782,,other,fill,0.3033208143903297
 R00233,RPA0560,Beta-Alanine metabolism,malonyl-CoA carboxy-lyase (acetyl-CoA-forming),FVSEOF|FluxRETAP,2,0.717,-0.1135111689912975,0.1461748633879782,,aa,fill,0.3033208143903297
+R02740,RPA3634,Glycolysis / Gluconeogenesis,D-Glucose-6-phosphate ketol-isomerase,FluxRETAP|CASOP,2,0.6965,,0.0594609613781687,0.0330859372165152,backbone,fill,0.07283485752075179
 R00256,RPA4211,Glutamate metabolism,L-Glutamine amidohydrolase,FVSEOF|FluxRETAP,2,0.6667,-0.1135111689926609,0.1461748633879778,,aa,fill,0.3033208143903285
 R00341,RPA0360,Glycolysis / Gluconeogenesis,ATPoxaloacetate carboxy-lyase (transphosphorylating),FVSEOF|FluxRETAP,2,0.6604,-0.1135111689913741,0.1461748633879779,,backbone,fill,0.30332081439032876
 R00848,RPA4410,Glycerophospholipid metabolism,sn-Glycerol-3-phosphate(acceptor) 2-oxidoreductase,FVSEOF|FluxRETAP,2,0.5094,-0.0825535774490873,0.1063089915548938,,other,fill,0.17369584359124382
-R02740,RPA3634,Glycolysis / Gluconeogenesis,D-Glucose-6-phosphate ketol-isomerase,FluxRETAP|CASOP,2,0.4768,,0.0594609613781687,0.0330579185814359,backbone,fill,0.021368194290645327
 R03316,RPA0189,Citrate cycle (TCA cycle),3-Carboxy-1-hydroxypropyl-ThPPlipoamde,FVSEOF|FluxRETAP,2,0.4717,-0.0522926066963614,0.1020566318927553,,tca,fill,0.1598691800395272
 R00239,RPA0163,Urea cycle and metabolism of amino groups,ATPL-glutamate 5-phosphotransferase,FVSEOF|FluxRETAP,2,0.434,-0.0756741126620202,0.0974499089253188,,aa,fill,0.14489029452477803
 R03313,RPA0164,Urea cycle and metabolism of amino groups,L-Glutamate-5-semialdehydeNADP+ 5-oxidoreductase (phosphorylationg),FVSEOF|FluxRETAP,2,0.4151,-0.0756741126617412,0.0974499089253186,,aa,fill,0.1448902945247774
 R00216,RPA3042,Pyruvate metabolism,(S)-Malate:NADP+ oxidoreductase(oxaloacetate-decarboxylating),FVSEOF|FluxRETAP,2,0.3962,-0.060478935498263,0.0835284933645704,,tca,fill,0.09962443170608613
 R00894,RPA0822,Glutathione metabolism,L-GlutamateL-cysteine gamma-ligase (ADP-forming),FVSEOF|FluxRETAP,2,0.2264,-0.0567555844962529,0.073087431693989,,other,fill,0.06567503459200186
 R03276,RPA0818,Fatty acid metabolism,(S)-3-Hydroxybutanoyl-CoA 3-epimerase,FluxRETAP,1,1.0,,0.3604369993875381,,accoa,sharp,1.0
-R01195,RPA1578,Carbon fixation in photosynthetic organisms,FerredoxinNADP+ oxidoreductase,CASOP,1,1.0,,,0.1070648354625594,redox,sharp,1.0
+R01195,RPA1578,Carbon fixation in photosynthetic organisms,FerredoxinNADP+ oxidoreductase,CASOP,1,1.0,,,0.0937832724684994,redox,sharp,1.0
 R01137,RPA3056,Purine metabolism,ATPnucleoside-diphosphate phosphatransferase,FluxRETAP,1,0.9623,,0.1948998178507428,,nuc,sharp,0.4617513342562235
 R01529,RPA3815,Pentose phosphate pathway,D-Ribulose-5-phosphate 3-epimerase,FVSEOF,1,0.8235,-0.2313889510864884,,,ppp,sharp,0.49777873460729394
-R01325,RPA0202,Citrate cycle (TCA cycle),citrate hydro-lyase,FVSEOF,1,0.7843,-0.1337602702727922,,,tca,sharp,0.22919465129184818
 R01899,RPA3834,Citrate cycle (TCA cycle),IsocitrateNADP+ oxidoreductase (decarboxylating),FVSEOF,1,0.3922,-0.087164303294333,,,tca,fill,0.10100552722708325

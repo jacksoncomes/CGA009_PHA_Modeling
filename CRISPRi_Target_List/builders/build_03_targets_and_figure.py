@@ -431,13 +431,23 @@ pd.set_option("display.width", 220); pd.set_option("display.max_colwidth", 46)
 
 CARBON = "coumarate"
 FORCE_RERUN = False   # set True to recompute the cached scan instead of loading it
-N_SAMPLES, THINNING = 5000, 100
+N_SAMPLES, THINNING = 15000, 100
 SAMPLE_CACHE = L.OUT / "_casop_coumarate_samples.pkl.gz"
 # Selection floor is data-driven (mean + N_SIGMA*sigma of the positive-score distribution), not a
 # transplanted absolute. WITHOUT a floor (score>0) ~half the network qualifies (low-yield == high-growth
 # noise tail); the data-driven floor keeps only reactions whose yield-stratified importance is
 # statistically above background, and adapts to coumarate's score scale (see header table + §2).
 N_SIGMA = 2.0
+
+# Fixed RNG seed + 15000 samples: make the OptGP flux sampler below reproducible from scratch, so the
+# pipeline no longer depends on the frozen unseeded sample cache (FORCE_RERUN True/False give the same
+# scores). 5000 samples undersampled this ~1255-reaction polytope (CASOP scores in the ~0.03-0.11 band were
+# seed-noisy - e.g. the #1 gene RPA1578 could fall to rank ~10 on some seeds); at 15000 the scores are
+# reproducible (byte-identical across independent seed-42 draws) and RPA1578 is an unambiguous rank-1 on
+# seeds 1/2/42. CASOP's rank-1 selection (see the SHARP_N cell below) rests on that stable rank, not on the
+# score magnitude (which still drifts between seeds). The committed cache is drawn under this seed at N_SAMPLES.
+SEED = 42
+np.random.seed(SEED)
 
 meta = L.metadata()
 gfluxes, mu_max = L.wt_growth_reference(CARBON)
@@ -451,7 +461,7 @@ else:
     m = L.build_growth_state(CARBON)
     m.reactions.get_by_id(L.BIOMASS).lower_bound = L.MIN_GROWTH_FRAC * mu_max     # viable space
     print("sampling (OptGP) ...")
-    S = OptGPSampler(m, processes=1, thinning=THINNING).sample(N_SAMPLES)
+    S = OptGPSampler(m, processes=1, thinning=THINNING, seed=SEED).sample(N_SAMPLES)
     S = S[S[L.BIOMASS] >= L.MIN_GROWTH_FRAC * mu_max * 0.99]                       # keep viable
     pickle.dump(S, gzip.open(SAMPLE_CACHE, "wb"))
     print(f"  cached {SAMPLE_CACHE.name}: {S.shape[0]} samples")
@@ -665,7 +675,12 @@ print(master.groupby("module").size().to_dict())'''),
 3. **Diversify to 30** with mostly *multi-method-supported* genes spanning strategies not yet covered —
    redox, NADPH/PPP (G6PDH = committed step), anaplerosis (PEPCK, malic enzyme), glutathione, lipid,
    propanoate, and amino-acid drains. (No glyoxylate-shunt genes here — kept out by choice.)'''),
-('code', r'''SHARP_N = {"FVSEOF": 10, "FluxRETAP": 8, "CASOP": 7}
+('code', r'''SHARP_N = {"FVSEOF": 10, "FluxRETAP": 8, "CASOP": 1}   # CASOP: rank-1 only (RPA1578).
+# Seeded N=15000: RPA1578 is rank-1 on seeds 1/2/42, but its score magnitude drifts (0.081-0.154) so a fixed
+# score floor can't isolate it seed-invariantly while its rank can. The old top-7 sliced through a tie band
+# (RPA4721/RPA3229/RPA0202 overlap between seeds -> churn); top-1 selects the single unambiguous leader that
+# wins by a clear margin on every seed. nb63 is sorted by casop_ko_score desc, so head(1) = the rank-1 gene.
+# Global scoring is unchanged: every displayed row keeps its CASOP number; this governs selection only.
 sharp = set()
 for m, (f, col, fam) in METHODS.items():
     d = pd.read_csv(L.OUT / f).reset_index(drop=True).head(SHARP_N[m])

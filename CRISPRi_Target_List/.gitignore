@@ -1,0 +1,9 @@
+# CASOP flux-sampling cache: intentionally NOT committed. Notebook 03 regenerates it
+# deterministically from the fixed seed (SEED=42, N_SAMPLES=15000) whenever it is absent,
+# so the figure reproduces from code + seed + model alone. ~70 MB; the seed is the source of truth.
+Results/nb60_targets/_casop_coumarate_samples.pkl.gz
+
+# transient
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
