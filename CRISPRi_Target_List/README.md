@@ -2,11 +2,11 @@
 
 A minimal, reproducible release of the genome-scale modeling pipeline that nominates single-gene
 **CRISPRi down-regulation targets** to increase PHB/PHA production in *Rhodopseudomonas palustris* CGA009
-(model **iAN1128**; Navid 2019) growing on **p-coumarate**, for a DBTL round-0 screen.
+(model **iAN1128**; Alsiyabi, Immethun & Saha 2019) growing on **p-coumarate**, for a DBTL round-0 screen.
 
 **The whole release leads to one figure:**
 [`Results/nb60_targets/figures/nb71_downselected.png`](Results/nb60_targets/figures/nb71_downselected.png)
-— *Round-0 CRISPRi targets, after literature downselection (41 kept)* — produced by notebook `03`.
+— *Round-0 CRISPRi targets, after literature downselection (40 kept)* — produced by notebook `03`.
 
 > Everything here is a **prioritized hypothesis set for a round-0 screen — not a validated design.**
 
@@ -15,7 +15,7 @@ A minimal, reproducible release of the genome-scale modeling pipeline that nomin
 ## Contents
 
 ```
-Release_github/
+CRISPRi_Target_List/
   Model/                     the model, before and after the fix
     12859_2019_2844_MOESM3_ESM.xml   published supplementary SBML (Navid/Alsiyabi 2019) — UNLOADABLE as-is
     CGA009_model_biomass_fix.xml     the working model the pipeline loads (published file + the one fix)
@@ -32,11 +32,15 @@ Release_github/
     build_02_reproduce_navid.py      regenerates notebook 02
     build_03_targets_and_figure.py   regenerates notebook 03 (self-contained; every cell embedded)
   Results/
-    nb60_targets/                    method CSVs, selection, downselected list, cut list, caches, figures/
+    nb60_targets/                    method CSVs, selection, downselected list, cut list, FluxRETAP cache, figures/
     paper_figs/                      paper figures extracted for the side-by-side in notebook 02
     nb05_*.png                       notebook-02 reproduction figures
   requirements.txt
 ```
+
+> The CASOP flux-sampling cache (`_casop_coumarate_samples.pkl.gz`, ~70 MB) is **not** shipped: notebook 03
+> regenerates it deterministically from the fixed seed (see [Determinism](#determinism)). The only committed
+> scan cache is the small FluxRETAP one.
 
 ### The two model files
 | File | Role |
@@ -52,21 +56,22 @@ Release_github/
 |---|---|---|---|
 | **01** | `01_model_fix.ipynb` | Repairs the published SBML (adds the missing `XC54_b` biomass boundary species) and proves the repaired model is byte-identical to the shipped working model. | growth = 0.0824 /h (Δ = 0 vs shipped) |
 | **02** | `02_reproduce_navid_2019.ipynb` | Validates the working model by reproducing the published Navid/Alsiyabi 2019 results. | **12/12 checks reproduce the paper** |
-| **03** | `03_targets_and_figure.ipynb` | Runs the complete target-selection pipeline end-to-end and renders the headline figure. | 51 combined targets → **41 kept after downselection** |
+| **03** | `03_targets_and_figure.ipynb` | Runs the complete target-selection pipeline end-to-end and renders the headline figure. | 50 combined targets → **40 kept after downselection** |
 
 ### What notebook 03 runs (all in one notebook, each part feeds the next)
 | Part | Method / step | Writes |
 |---|---|---|
 | 1 | **FVSEOF** — flux-response down-regulation scan (51 targets) | `nb60_fvseof_targets.csv` |
 | 2 | **FluxRETAP** — JBEI 1/overlap flux-range shift (53 targets) | `nb61_fluxretap_targets.csv` |
-| 3 | **CASOP** — yield-stratified importance via flux sampling (11 targets) | `nb63_casop_targets.csv` |
-| 4 | **Consensus + round-0 selection** (30 genes) | `nb64_master_target_table.csv`, `nb64_round0_selection.csv` |
+| 3 | **CASOP** — yield-stratified importance via **seeded** flux sampling (`SEED=42`, `N=15000`); scores 12 genes, contributes its **rank-1** gene `RPA1578` | `nb63_casop_targets.csv` |
+| 4 | **Consensus + round-0 selection** (27 genes) | `nb64_master_target_table.csv`, `nb64_round0_selection.csv` |
 | 5 | **Merge curated AI predictions + literature downselection → the figure** | `nb71_downselected_targets.csv`, `nb71_cut_list.csv`, `figures/nb71_downselected.{png,svg}` |
 
 The figure's four columns are the three FBA methods (FVSEOF / FluxRETAP / CASOP) plus a curated
-**AI-prediction** column (the literature table embedded in `lib/nb71_lib.py`). Part 5 cuts 10 redundant/
-counter-indicated metabolic targets and keeps the 5 model-blind regulators; the reasoning for every cut
-is printed and saved to `nb71_cut_list.csv`.
+**AI-prediction** column (the literature table embedded in `lib/nb71_lib.py`). Scoring is global — every
+displayed row shows its CASOP score whether or not CASOP *selected* it — while CASOP contributes only its
+single rank-1 gene to the target set. Part 5 cuts 10 redundant/counter-indicated metabolic targets and keeps
+the 5 model-blind regulators; the reasoning for every cut is printed and saved to `nb71_cut_list.csv`.
 
 ---
 
@@ -85,10 +90,11 @@ renders the figure. No commercial solver is needed — **GLPK** (bundled with co
 the default and is what this release was reproduced with. `lib/nb60_lib.py` sets
 `cobra.Configuration().processes = 1` (Windows multiprocess FVA is broken).
 
-> The version pins in `requirements.txt` are load-bearing for *exact* reproduction: the cached scans in
-> `Results/nb60_targets/` are pandas pickles (the CASOP one is gzip-compressed, `*.pkl.gz`, loaded
-> transparently), and GLPK/cobra determinism is what makes the numbers byte-stable. A very different
-> environment may shift low-order digits.
+> The version pins in `requirements.txt` are load-bearing for *exact* reproduction. The FluxRETAP scan is a
+> small committed cache (`_fluxretap_coumarate_ranges.pkl`); the CASOP scan is **seeded** and regenerated on
+> demand rather than shipped (see [Determinism](#determinism)). GLPK/cobra determinism is what makes the
+> numbers byte-stable — a very different environment may shift low-order digits. The first run of notebook 03
+> takes a few extra minutes because CASOP draws its 15,000 samples (then caches them locally, git-ignored).
 
 The notebooks in `Notebooks/` are **already executed** (open them to see the outputs without running
 anything). To re-run headless from the command line instead of the Jupyter UI:
@@ -110,10 +116,14 @@ python builders/build_03_targets_and_figure.py
 
 ### Determinism
 - **FVSEOF** (Part 1) recomputes its FVA scan every run and is fully deterministic (GLPK).
-- **FluxRETAP** (Part 2) and **CASOP** (Part 3) load cached scans from `Results/nb60_targets/` (`*.pkl` /
-  `*.pkl.gz`)
-  by default (`FORCE_RERUN = False` in the notebook). **Keep CASOP cached** — its flux sampler is not
-  seeded, so recomputing can shift the target list slightly.
+- **FluxRETAP** (Part 2) loads a small committed FVA cache (`_fluxretap_coumarate_ranges.pkl`); its scan is
+  FVA-based and deterministic.
+- **CASOP** (Part 3) is **seeded** (`SEED = 42`, `N_SAMPLES = 15000`): the OptGP sampler is deterministic, so
+  its scores are byte-identical run to run and across the `FORCE_RERUN` True/False paths. Its ~70 MB sample
+  cache (`_casop_coumarate_samples.pkl.gz`) is **not committed** — notebook 03 regenerates it from the seed
+  whenever it is absent, so a fresh clone reproduces the figure from code + seed + model alone. CASOP
+  contributes only its **rank-1** gene (`RPA1578`): its score *magnitude* drifts between seeds but its rank
+  does not, so rank-1 selection is seed-invariant (verified on seeds 1/2/42).
 - The **AI-prediction** column is a fixed curated table, not a live model call.
 
 ## Expected key numbers
@@ -122,10 +132,11 @@ python builders/build_03_targets_and_figure.py
 | Model-fix growth (acetate point, XR57=1.96) | **0.0824 /h** |
 | Paper reproduction (notebook 02) | **12 / 12 checks** |
 | Coumarate μmax (growth state) | **0.0773 /h** (doubling 8.97 h) |
-| FVSEOF / FluxRETAP / CASOP targets | **51 / 53 / 11** |
-| Round-0 selection (Part 4) | **30 genes** |
-| Combined FBA + AI list (Part 5) | **51 targets** |
-| **After downselection (the figure)** | **41 kept** (10 cut, 5 regulators retained) |
+| FVSEOF / FluxRETAP / CASOP scored | **51 / 53 / 12** |
+| CASOP selects (rank-1) | **RPA1578** |
+| Round-0 selection (Part 4) | **27 genes** |
+| Combined FBA + AI list (Part 5) | **50 targets** |
+| **After downselection (the figure)** | **40 kept** (10 cut, 5 regulators retained) |
 
 ## Citations
 - Alsiyabi, Immethun & Saha 2019, *BMC Bioinformatics* 20:233 — the iAN1128 model and the p-coumarate /

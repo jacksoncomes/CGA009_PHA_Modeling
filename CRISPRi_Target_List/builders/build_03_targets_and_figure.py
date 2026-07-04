@@ -31,14 +31,15 @@ CELLS = [
 | 1 | **FVSEOF** — flux-response down-regulation scan | `nb60_fvseof_targets.csv` |
 | 2 | **FluxRETAP** — JBEI 1/overlap flux-range shift | `nb61_fluxretap_targets.csv` |
 | 3 | **CASOP** — yield-stratified importance (flux sampling) | `nb63_casop_targets.csv` |
-| 4 | **Consensus + round-0 selection** (30 genes) | `nb64_master_target_table.csv`, `nb64_round0_selection.csv` |
+| 4 | **Consensus + round-0 selection** (27 genes) | `nb64_master_target_table.csv`, `nb64_round0_selection.csv` |
 | 5 | **Merge AI predictions + literature downselection → the figure** | `nb71_downselected_targets.csv`, `nb71_cut_list.csv`, `figures/nb71_downselected.png/.svg` |
 
 **Reproducibility / determinism.** FVSEOF (Part 1) recomputes its FVA scan every run and is fully
-deterministic (GLPK). FluxRETAP (Part 2) and CASOP (Part 3) load cached scans from
-`Results/nb60_targets/*.pkl` by default (`FORCE_RERUN = False`); **keep CASOP cached** — its flux sampler
-is not seeded, so recomputing can shift the list slightly. The AI-prediction column (Part 5) is a curated
-literature table embedded in `lib/nb71_lib.py`. No commercial solver is needed (GLPK).'''),
+deterministic (GLPK). FluxRETAP (Part 2) loads a small committed FVA cache. CASOP (Part 3) is **seeded**
+(`SEED = 42`, `N_SAMPLES = 15000`): its sampler is deterministic (byte-identical scores run to run and
+across `FORCE_RERUN` True/False), and its ~70 MB sample cache is **not** committed — it regenerates from the
+seed when absent. CASOP contributes only its rank-1 gene (`RPA1578`). The AI-prediction column (Part 5) is a
+curated literature table embedded in `lib/nb71_lib.py`. No commercial solver is needed (GLPK).'''),
 ('markdown', r'''# Part 1 · FVSEOF — flux-response down-regulation targets
 ### *Rhodopseudomonas palustris* CGA009 (Alsiyabi, Immethun & Saha 2019, "iAN1128")
 
@@ -420,7 +421,8 @@ problem we fixed for FluxRETAP's `score>500`). Two principled fixes:
 ('markdown', r'''## 1 · Sample the viable production space
 
 Growth ≥ 10 % of µmax, PHB demand free → samples span low-PHB/high-growth to high-PHB/low-growth.
-`OptGPSampler(processes=1, thinning=100)`, 5000 samples; cached (~minutes first run).'''),
+`OptGPSampler(processes=1, thinning=100, seed=42)`, 15000 samples; seeded and deterministic. The cache is
+git-ignored and regenerated from the seed when absent (~minutes first run).'''),
 ('code', r'''import sys, pickle, gzip
 from pathlib import Path
 sys.path.insert(0, str(Path.cwd().parent / "lib")); sys.path.insert(0, str(Path.cwd().parent / "lib" / "FluxRETAP"))
@@ -563,10 +565,10 @@ try:
     print(f"CASOP-unique: {len(cas - sets['FVSEOF'] - sets['FluxRETAP'])}")
 except Exception as e:
     print("overlap check skipped:", e)'''),
-('markdown', r'''# Part 4 · Consensus + round-0 target selection (30 genes)
+('markdown', r'''# Part 4 · Consensus + round-0 target selection (27 genes)
 ### *Rhodopseudomonas palustris* CGA009 (iAN1128)
 
-Combines the three down-regulation methods and **selects a diverse 30-gene round-0 target set**:
+Combines the three down-regulation methods and **selects a diverse 27-gene round-0 target set**:
 - **FVSEOF** (flux-response) · raw value = `q_slope`
 - **FluxRETAP** (flux-response) · raw value = `flux_diff`
 - **CASOP** (yield-importance) · raw value = `casop_ko_score`
@@ -578,7 +580,7 @@ into the round-0 selection.)
 across several methods) and can bury a method's single strongest call — e.g. FluxRETAP's #1 target, the
 PHB-precursor epimerase `RPA0818`, never makes a consensus top-30. For an exploratory **round-0 screen** we
 instead seed with each method's *clearly-ranked* picks, then collapse redundancy and diversify. The
-selection (§3) is the 30-gene pool carried into the AI-merge and literature downselection in Part 5.'''),
+selection (§3) is the 27-gene pool carried into the AI-merge and literature downselection in Part 5.'''),
 ('markdown', r'''## 1 · Per-gene method support + raw predicted values'''),
 ('code', r'''import sys
 from pathlib import Path
@@ -668,11 +670,12 @@ print(master.groupby("module").size().to_dict())'''),
 1. **Each method's clearly-ranked picks (smart cutoffs).** Every method's scores fall off into a
    *flux-coupled tie* (reactions carrying identical flux, which the method cannot rank); we keep each method
    down to that natural break — **FVSEOF top 10, FluxRETAP top 8** (its #1, `RPA0818`, stands far above the
-   rest), **CASOP top 7** → ~17 high-confidence genes, including each method's individual champion.
+   rest), **CASOP top 1** (only its rank-1 gene `RPA1578` is seed-robust — see the seeding note in the code
+   cell below) → ~12 high-confidence genes, including each method's individual champion.
 2. **Collapse redundant pathway members** (keep the controlling step, per literature): the two
    acetyl-CoA-carboxylase subunits → one (`RPA0071`); the PTA-AckA pair → keep `pta` (`RPA4567`; `ackA`
    knockout causes toxic acetyl-phosphate buildup).
-3. **Diversify to 30** with mostly *multi-method-supported* genes spanning strategies not yet covered —
+3. **Diversify to 27** with mostly *multi-method-supported* genes spanning strategies not yet covered —
    redox, NADPH/PPP (G6PDH = committed step), anaplerosis (PEPCK, malic enzyme), glutathione, lipid,
    propanoate, and amino-acid drains. (No glyoxylate-shunt genes here — kept out by choice.)'''),
 ('code', r'''SHARP_N = {"FVSEOF": 10, "FluxRETAP": 8, "CASOP": 1}   # CASOP: rank-1 only (RPA1578).
@@ -701,16 +704,16 @@ print(f"round-0 selection = {len(selection)} genes "
       f"multi-method: {(selection.n_methods>=2).sum()} | RPA0818 in: {'RPA0818' in set(selection.gene)}")
 print("modules:", selection.module.value_counts().to_dict())
 selection[["gene","name","module","methods","n_methods","source"]].sort_values(["module","source"])'''),
-('markdown', r'''The 30-gene round-0 selection above is written to `nb64_round0_selection.csv`, and the full method×target table to `nb64_master_target_table.csv`. Part 5 loads both, merges the curated AI-prediction column, and renders the headline downselection figure. *(The intermediate per-module heatmaps from the original NB64 are omitted here — this notebook leads to the single downselection figure.)*'''),
+('markdown', r'''The 27-gene round-0 selection above is written to `nb64_round0_selection.csv`, and the full method×target table to `nb64_master_target_table.csv`. Part 5 loads both, merges the curated AI-prediction column, and renders the headline downselection figure. *(The intermediate per-module heatmaps from the original NB64 are omitted here — this notebook leads to the single downselection figure.)*'''),
 ('markdown', r'''# Part 5 · Merge AI predictions + literature downselection → the figure
 ### *Rhodopseudomonas palustris* CGA009 (iAN1128)
 
-Takes the combined **51-target** FBA+AI list (NB70) and trims it: within each group of targets doing the
+Takes the combined **50-target** FBA+AI list (NB70) and trims it: within each group of targets doing the
 **same job**, a deep literature search picks the best-in-class for CGA009 and cuts the redundant losers
 (plus clear counter-evidence). **Two charts** — full (before) then fully-downselected (after) — and a **cut
 list** with the reason for every removal.
 
-**Cuts applied (10 → 41 kept).** Only *metabolic enzymes the model contains* are cut; the **5 regulators
+**Cuts applied (10 → 40 kept).** Only *metabolic enzymes the model contains* are cut; the **5 regulators
 (model-blind, no reaction in iAN1128) are kept** — orthogonal biology FBA can never surface.
 | group | keep | cut | basis |
 |---|---|---|---|
@@ -725,7 +728,7 @@ list** with the reason for every removal.
 single-guide-feasible master lever (no paralog), while `glnB`/`glnK` are individually targetable but
 PII-paralog-buffered. `gltB` (GOGAT) is single-guide-feasible via the shared RPA0891 subunit if you later
 want a metabolic N-lever back.*'''),
-('markdown', r'''## 1 · Load the combined NB70 table (51 targets)'''),
+('markdown', r'''## 1 · Load the combined NB70 table (50 targets)'''),
 ('code', r'''import sys
 from pathlib import Path
 sys.path.insert(0, str(Path.cwd().parent / "lib")); sys.path.insert(0, str(Path.cwd().parent / "lib" / "FluxRETAP"))
@@ -736,9 +739,9 @@ pd.set_option("display.width", 260); pd.set_option("display.max_colwidth", 120)
 rows, ai = NB.get_data()
 PALETTE = "uw"   # colour scheme; options: uw (Husky purple+gold) | original | teal-clay | slate-amber | steel-rust
 print(f"combined list = {len(rows)} targets  ({rows.source.value_counts().to_dict()})  | palette = {PALETTE}")'''),
-('markdown', r'''## 2 · Chart 1 — combined FBA + AI, **full list before downselection** (51)'''),
-('code', r'''NB.heatmap(rows, "Round-0 CRISPRi targets — FBA + AI combined (full 51, before downselection)", "nb71_full", palette=PALETTE)'''),
-('markdown', r'''## 3 · Chart 2 — **after downselection** (41 kept)
+('markdown', r'''## 2 · Chart 1 — combined FBA + AI, **full list before downselection** (50)'''),
+('code', r'''NB.heatmap(rows, "Round-0 CRISPRi targets — FBA + AI combined (full 50, before downselection)", "nb71_full", palette=PALETTE)'''),
+('markdown', r'''## 3 · Chart 2 — **after downselection** (40 kept)
 
 `CUT_LIBRARY[model_locus] = (symbol, group, justification, citation)`. `GROUPS_TO_APPLY` selects which groups
 are cut — the **`regulator (model-blind, KEPT)`** group is deliberately *excluded*, so those 5 regulators are
