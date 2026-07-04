@@ -116,10 +116,9 @@ python builders/build_03_targets_and_figure.py
 
 ### Determinism
 - **FVSEOF** (Part 1) recomputes its FVA scan every run and is fully deterministic (GLPK).
-- **FluxRETAP** (Part 2) loads a small committed FVA cache (`_fluxretap_coumarate_ranges.pkl`, 150 KB). Its
-  scan is FVA-based (no sampling); recomputing from scratch is numerically identical to solver precision but
-  can reorder *exactly-tied* reactions by floating-point roundoff, so the cache is kept as a byte-stability
-  anchor. The 40-gene target set is the same with or without it.
+- **FluxRETAP** (Part 2) loads a small committed FVA cache (`_fluxretap_coumarate_ranges.pkl`) as a
+  byte-stability anchor; recomputation is numerically identical but reorders exact ties, and the 40-gene
+  target set is unaffected.
 - **CASOP** (Part 3) is **seeded** (`SEED = 42`, `N_SAMPLES = 15000`): the OptGP sampler is deterministic, so
   its scores are byte-identical run to run and across the `FORCE_RERUN` True/False paths. Its ~70 MB sample
   cache (`_casop_coumarate_samples.pkl.gz`) is **not committed** — notebook 03 regenerates it from the seed
