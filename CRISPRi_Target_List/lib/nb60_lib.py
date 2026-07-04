@@ -1,7 +1,7 @@
 """
 nb60_lib.py — shared configuration & helpers for the CLEAN NB60+ CRISPRi/PHB target pipeline.
 ================================================================================================
-Rhodopseudomonas palustris CGA009 (Alsiyabi, Immethun & Saha 2019, "iAN1128") on p-coumarate.
+Rhodopseudomonas palustris CGA009 (Navid/Alsiyabi 2019, "iAN1128") on p-coumarate.
 
 This is an INDEPENDENT reimplementation written for the NB60+ redo. It deliberately does NOT import
 the prior-effort modules (crispri_shared.py, phb_combo_lib.py, coumarate_methods_faithful.py) — every
@@ -18,7 +18,7 @@ Verified against Model/CGA009_model_biomass_fix.xml (2026-06-29):
     XR350 (sulfoacetate) is an organic-C valve carrying ZERO flux -> closed here for a clean medium.
 
 Literature anchors (cite in the notebooks):
-  Alsiyabi, Immethun & Saha 2019 BMC Bioinformatics — the model + acetate(1.96)/coumarate/photon(36.6).
+  Navid/Alsiyabi 2019 BMC Bioinformatics — the model + acetate(1.96)/coumarate/photon(36.6).
   McKinlay & Harwood 2010 PNAS — CO2 fixation as the dominant electron sink (coumarate is more reduced
     than acetate, so PHB/NADPH redox nodes matter more on coumarate).
   Pan et al. 2012 J Bacteriol; Hirakawa et al. 2020 Mol Cell Proteomics — couAB p-coumarate catabolism.
@@ -78,7 +78,7 @@ ORGANIC_C_VALVES = ["XR57", "XR242", "XR80", "XR339", "XR62", "XR96", "XR94", "X
 #                   acetate coumarate succ  pyruvate benz  lactate fumar sulfoacetate
 
 # ── feeding / knockdown constants (literature- and validation-grounded) ────────
-PHOTON_UB     = 36.6      # light-limited; Alsiyabi 2019
+PHOTON_UB     = 36.6      # light-limited; Navid/Alsiyabi 2019
 NH3_REPLETE   = 10.0      # replete N for the growth state
 COUMARATE_UB  = 1000.0    # leave coumarate uptake unconstrained; photon (36.6) self-limits it to ~0.33
 ACETATE_FIX   = 1.96      # acetate point (fixed), for optional acetate comparisons only

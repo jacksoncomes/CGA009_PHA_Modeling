@@ -41,7 +41,7 @@ across `FORCE_RERUN` True/False), and its ~70 MB sample cache is **not** committ
 seed when absent. CASOP contributes only its rank-1 gene (`RPA1578`). The AI-prediction column (Part 5) is a
 curated literature table embedded in `lib/nb71_lib.py`. No commercial solver is needed (GLPK).'''),
 ('markdown', r'''# Part 1 · FVSEOF — flux-response down-regulation targets
-### *Rhodopseudomonas palustris* CGA009 (Alsiyabi, Immethun & Saha 2019, "iAN1128")
+### *Rhodopseudomonas palustris* CGA009 (Navid/Alsiyabi 2019, "iAN1128")
 
 **Goal of this notebook (one method).** Predict single-gene **down-regulation (CRISPRi)** targets that
 increase flux toward PHB using **FVSEOF** (Flux Variability Scanning based on Enforced Objective Flux).
@@ -63,8 +63,8 @@ Every non-trivial modeling choice and its source:
 
 | Choice | Value | Grounding |
 |---|---|---|
-| Carbon source | p-coumarate, uptake `XR242` **unconstrained** (0–1000); acetate `XR57` **closed** | Alsiyabi 2019 feed it unconstrained and let light limit growth |
-| Light | photon `XR55` lower −36.6 | Alsiyabi 2019 photon-limited point |
+| Carbon source | p-coumarate, uptake `XR242` **unconstrained** (0–1000); acetate `XR57` **closed** | Navid/Alsiyabi 2019 feed it unconstrained and let light limit growth |
+| Light | photon `XR55` lower −36.6 | Navid/Alsiyabi 2019 photon-limited point |
 | N (growth state) | NH₃ `XR90` ≤ 10 (replete) | reference physiological state |
 | O₂ | anaerobic (O₂ valves already 0) | *R. palustris* anaerobic photoheterotrophy |
 | PHB readout | runtime sink `DM_C06143` (C06143 ⟶), bounds (0,1000) | sole readout of excess PHB; phaC `R04254` is the only producer |
@@ -203,7 +203,7 @@ out'''),
 - **What this method does:** ranks single down-regulation targets by how strongly a reaction's flux must
   decline (negative `q_slope`) as enforced PHB rises, with a robustness (`r²`) and magnitude floor.
 - **Grounded in:** FSEOF — Choi et al. 2010 *AEM* 76:3097; FVSEOF (+GR variability) — Park et al. 2012
-  *BMC Syst Biol* 6:106. Coumarate medium & photon 36.6 — Alsiyabi, Immethun & Saha 2019. CRISPRi 90 %-KD
+  *BMC Syst Biol* 6:106. Coumarate medium & photon 36.6 — Navid/Alsiyabi 2019. CRISPRi 90 %-KD
   / 10 %-viability operating point as in the validated pipeline.
 - **Couldn't verify / caveats:** `q_slope` is a model-specific ranker (flux-fraction proxy; the iAN1128
   model has no enzyme-capacity bounds — a GECKO ec-model would be more rigorous; CRISPRi is buffered in
@@ -377,7 +377,7 @@ out'''),
   effect-size floors; (3) replaced the full-KO viability gate with a 90 %-KD partial-repression gate
   (the library gate is NaN-incompatible with essential genes — same swap NB21 made); (4) dropped the
   PHB-pathway positive controls.
-- **Grounded in:** FluxRETAP — Tibocha-Bonilla et al. / JBEI; coumarate medium — Alsiyabi 2019; CRISPRi
+- **Grounded in:** FluxRETAP — Tibocha-Bonilla et al. / JBEI; coumarate medium — Navid/Alsiyabi 2019; CRISPRi
   90 %-KD / 10 %-viability operating point as in the validated pipeline.
 - **Caveats:** 1/overlap is a weak ranker on this model (hence ranking by `|fluxDiff|`); flux-fraction
   KD proxy (no enzyme bounds; GECKO would be more rigorous); CRISPRi buffering (Donati et al. 2021).
@@ -544,7 +544,7 @@ out'''),
 - **What this method does:** ranks reactions by **yield-stratified importance** — carries more flux when
   PHB yield is *low* ⇒ a knockdown candidate (the CASOP knockout-importance principle).
 - **Grounded in:** CASOP — Hädicke & Klamt 2010 *J Biotechnol*; rendered via flux sampling because EMs do
-  not enumerate at genome scale (CASOP-GS itself samples). Coumarate medium — Alsiyabi 2019.
+  not enumerate at genome scale (CASOP-GS itself samples). Coumarate medium — Navid/Alsiyabi 2019.
 - **Coumarate adaptations (documented, §2 evidence):** (1) stratify by **yield** (PHB/carbon), not
   absolute PHB — the sampler explores the bulk, not the high-PHB vertices; (2) **data-driven `mean+2σ`**
   selection floor, replacing the acetate-calibrated `0.05` (which returned only 2 because CASOP's score

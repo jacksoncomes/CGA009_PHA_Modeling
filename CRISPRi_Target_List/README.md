@@ -2,7 +2,7 @@
 
 A minimal, reproducible release of the genome-scale modeling pipeline that nominates single-gene
 **CRISPRi down-regulation targets** to increase PHB/PHA production in *Rhodopseudomonas palustris* CGA009
-(model **iAN1128**; Alsiyabi, Immethun & Saha 2019) growing on **p-coumarate**, for a DBTL round-0 screen.
+(model **iAN1128**; Navid/Alsiyabi 2019) growing on **p-coumarate**, for a DBTL round-0 screen.
 
 **The whole release leads to one figure:**
 [`Results/nb60_targets/figures/nb71_downselected.png`](Results/nb60_targets/figures/nb71_downselected.png)
@@ -116,8 +116,10 @@ python builders/build_03_targets_and_figure.py
 
 ### Determinism
 - **FVSEOF** (Part 1) recomputes its FVA scan every run and is fully deterministic (GLPK).
-- **FluxRETAP** (Part 2) loads a small committed FVA cache (`_fluxretap_coumarate_ranges.pkl`); its scan is
-  FVA-based and deterministic.
+- **FluxRETAP** (Part 2) loads a small committed FVA cache (`_fluxretap_coumarate_ranges.pkl`, 150 KB). Its
+  scan is FVA-based (no sampling); recomputing from scratch is numerically identical to solver precision but
+  can reorder *exactly-tied* reactions by floating-point roundoff, so the cache is kept as a byte-stability
+  anchor. The 40-gene target set is the same with or without it.
 - **CASOP** (Part 3) is **seeded** (`SEED = 42`, `N_SAMPLES = 15000`): the OptGP sampler is deterministic, so
   its scores are byte-identical run to run and across the `FORCE_RERUN` True/False paths. Its ~70 MB sample
   cache (`_casop_coumarate_samples.pkl.gz`) is **not committed** — notebook 03 regenerates it from the seed
@@ -139,7 +141,7 @@ python builders/build_03_targets_and_figure.py
 | **After downselection (the figure)** | **40 kept** (10 cut, 5 regulators retained) |
 
 ## Citations
-- Alsiyabi, Immethun & Saha 2019, *BMC Bioinformatics* 20:233 — the iAN1128 model and the p-coumarate /
+- Navid/Alsiyabi 2019, *BMC Bioinformatics* 20:233 — the iAN1128 model and the p-coumarate /
   photon (36.6) conditions.
 - McKinlay & Harwood 2010, *PNAS* — CO₂ fixation as the dominant electron sink on reduced substrates.
 - FVSEOF: Choi et al. 2010 *AEM*; Park et al. 2012 *BMC Syst Biol*. FluxRETAP: Tibocha-Bonilla et al.
