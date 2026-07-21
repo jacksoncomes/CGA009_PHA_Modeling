@@ -1,0 +1,8 @@
+symbol,nb71_locus,correct_locus,old_locus_actually_is,basis
+phaZ,RPA1786,RPA0575,3-hydroxybutyryl-CoA dehydratase (crotonase),"RefSeq gene=phaZ, PHA depolymerase"
+phaR,RPA1795,RPA0530,cation:proton antiporter,"RefSeq gene=phaR, PHA synthesis repressor"
+glnB,RPA0454,RPA2966,universal stress protein,P-II regulator immediately upstream of glnA1 (RPA2967)
+glnK,RPA0584,RPA0272/RPA0274,RNA-binding accessory protein,"two P-II paralogs, each in a glnK-amtB operon (RPA0273/RPA0275 = amtB)"
+ntrB,RPA1711,RPA2592,nitroreductase,"nitrogen-regulation NR(II) sensor kinase, adjacent to ntrC (RPA2593)"
+nifA,RPA4630,RPA4632,NifB (nitrogenase cofactor biosynthesis),RefSeq gene=nifA; RPA4630 is the neighbouring nifB
+regB,RPA3332,RPA0572,curli assembly protein CsgF,PrrB/RegB redox sensor kinase; RegA/PrrA = RPA0571
