@@ -84,14 +84,16 @@ Every symbol below was **cross-validated against the CGA009 RefSeq annotation** 
 - **`EXTRA_SYMBOLS`** — the FBA-only loci, which the iAN1128 model stores as bare `RPA####` tags. Symbols
   that RefSeq/UniProt assign by name are marked `NCBI`/`UniProt`; the rest are the **conventional symbol for
   the annotated enzyme** and marked `conv` (function-confirmed by the RefSeq product, but RefSeq assigns no
-  symbol). One locus (`RPA0818`) is left as its tag — RefSeq calls it a 3-hydroxyacyl-CoA dehydrogenase with
-  no clean symbol.
+  symbol). `RPA0818` → **`fadB`**: RefSeq calls it a 3-hydroxyacyl-CoA dehydrogenase, but in the model it
+  carries the hydratase + dehydrogenase + (S)-3-hydroxybutanoyl-CoA epimerase (R03276) activities of a
+  multifunctional β-oxidation enzyme — a FadB (it is FluxRETAP's #1 hit, via that epimerase reaction).
 - **`SYMBOL_FIX`** — two AI-table symbols that were **wrong for their locus** and are corrected here:
   `RPA0071` is **accD** (carboxyl-transferase β), not accA; `RPA0216` is **sdhB** (the Fe-S subunit) — the
   true `sdhA` flavoprotein is `RPA0217`.
 
-The deeper problem — several AI-table rows whose **locus points at an unrelated gene** — is handled
-separately in **Part 1b**, because it changes the target *loci*, not these display labels.
+**The y-axis now shows the locus after each gene name** (in muted grey). For the seven AI rows whose original
+`nb71_lib` locus points at an unrelated gene, the figure shows the **corrected, RefSeq-verified** locus
+(`DISPLAY_LOCUS`) — never the wrong tag. Full provenance for those corrections is in **Part 1b**.
 
 `short_name()` order: **`SYMBOL_FIX` → curated `ai_symbol` → `EXTRA_SYMBOLS` → RPA locus.**'''),
 ('code', r'''# FBA-only loci -> gene symbol. src tag: NCBI = RefSeq gene= symbol; UniProt = UniProt primary; conv =
@@ -120,15 +122,19 @@ EXTRA_SYMBOLS = {
     "RPA3450": "mmsA",   # conv  CoA-acylating methylmalonate-semialdehyde dehydrogenase
     "RPA0560": "mcd",    # UniProt MLYCD; malonyl-CoA decarboxylase
     "RPA0962": "hupS",   # conv  uptake hydrogenase small subunit (provisional; hup vs hox)
-    # RPA0818 left as its locus: RefSeq = 3-hydroxyacyl-CoA dehydrogenase, no clean symbol
+    "RPA0818": "fadB",   # conv  multifunctional beta-oxidation enzyme (dehydratase/dehydrogenase/epimerase); FluxRETAP #1 via its epimerase rxn R03276
 }
 # AI-table symbols that were WRONG for their locus (verified vs RefSeq) -> corrected display label:
 SYMBOL_FIX = {
     "RPA0071": "accD",   # was 'accA'; RPA0071 = acetyl-CoA carboxylase carboxyltransferase beta (accD)
     "RPA0216": "sdhB",   # was 'sdhA'; RPA0216 = succinate dehydrogenase Fe-S subunit (sdhB). sdhA = RPA0217
 }
+# Corrected RefSeq-verified loci for the 7 AI rows whose nb71 locus points at an unrelated gene (full
+# provenance in Part 1b). Used ONLY for the displayed locus column, so the figure never shows a wrong tag.
+DISPLAY_LOCUS = {"RPA1786": "RPA0575", "RPA1795": "RPA0530", "RPA0454": "RPA2966", "RPA0584": "RPA0272/74",
+                 "RPA1711": "RPA2592", "RPA4630": "RPA4632", "RPA3332": "RPA0572"}
 def short_name(r):
-    """Resolve a y-axis label: SYMBOL_FIX -> curated ai_symbol -> EXTRA_SYMBOLS -> RPA locus."""
+    """Resolve a y-axis gene label: SYMBOL_FIX -> curated ai_symbol -> EXTRA_SYMBOLS -> RPA locus."""
     if r.gene in SYMBOL_FIX:
         return SYMBOL_FIX[r.gene]
     if r.ai_symbol:
@@ -136,10 +142,11 @@ def short_name(r):
     return EXTRA_SYMBOLS.get(r.gene, r.gene)
 
 df["short"] = df.apply(short_name, axis=1)
+df["dloc"]  = df.gene.map(lambda g: DISPLAY_LOCUS.get(g, g))   # locus shown (grey) after the gene name
 _locus = df[df.short == df.gene]
 print(f"labelled with a gene symbol: {len(df) - len(_locus)}/{len(df)}  |  still shown as RPA locus: {len(_locus)}")
 print("  locus-only rows:", ", ".join(_locus.gene) or "(none)")
-df[["gene", "short", "ai_symbol", "source", "module", "name"]]'''),
+df[["gene", "short", "dloc", "ai_symbol", "source", "module", "name"]]'''),
 ('markdown', r'''## Part 1b · Locus cross-validation — AI-table loci that point at the wrong gene
 
 The AI-prediction rows in `nb71_lib` carry hand-curated `RPA####` loci for genes **not in the model**
@@ -170,16 +177,32 @@ val'''),
 
 ('markdown', r'''## Part 2 · The refined renderer `heatmap_v2`
 
-Structurally identical cell/side-bar drawing to `nb71_lib.heatmap` (same intensity maps, same module
-ordering, same colour palette) with exactly the three v1 changes applied — see the inline `# CHANGE`
-markers. `palette` reuses `nb71_lib.PALETTES` (default `"uw"` — Husky purple + gold).'''),
-('code', r'''COLS = NB.COLS              # ["FVSEOF", "FluxRETAP", "CASOP"]
+Same intensity maps and module ordering as `nb71_lib.heatmap`, with the refinements applied (see the inline
+`# CHANGE` markers). **Colour scheme:** the three FBA method columns use a **crimson** ramp (`FBA_CMAP`);
+the AI-prediction column uses a **blackberry** ramp (`AI_CMAP`); the module side-bars (and their section
+labels) use a muted jewel-tone set (`MOD_COLORS`). All three are defined at the top of the cell — edit
+those hex stops to re-theme the figure.'''),
+('code', r'''from matplotlib.colors import LinearSegmentedColormap as _LSC
+COLS = NB.COLS              # ["FVSEOF", "FluxRETAP", "CASOP"]
 MODULES = NB.MODULES        # ordered (module_key, (line1, line2)) side-bar labels
 
-def heatmap_v2(df, fname=None, palette="uw", caption=True, ax=None, save=True):
-    """Refined FBA+AI heatmap. v1 changes vs nb71_lib.heatmap:
-       (1) no title; (2) y-labels = df['short'] gene names; (3) y-labels solid black, normal weight."""
-    pal = NB.PALETTES[palette]; MODc = pal["mods"]
+# --- "emo" palette: FBA method columns = crimson ramp, AI column = blackberry ramp (both pale -> deep) ---
+FBA_CMAP = _LSC.from_list("crimson",    ["#f2e6e7", "#d9a6ab", "#bc6d76", "#8e3743", "#4f1620"])
+AI_CMAP  = _LSC.from_list("blackberry", ["#efe7ee", "#cdadc7", "#a274a0", "#6e4368", "#3b1e39"])
+# warm jewel-tone module side-bars (also colour the section labels) — kept in the crimson/blackberry family
+# (aubergine / clay / plum / gold / terracotta / berry / wine / ochre / mauve / taupe) so the right edge matches
+MOD_COLORS = dict(redox="#6b5a72", backbone="#93685f", accoa="#7a5570", ppp="#a5823f", tca="#a4564a",
+                  nreg="#8f5060", phb="#7c3547", aa="#8b7c47", nuc="#956d84", other="#8c827b")
+import matplotlib.colors as _mcolors
+def _darken(c, f=0.62):   # darker shade of a module colour for the (bolder) section-label text
+    r, g, b = _mcolors.to_rgb(c); return (r * f, g * f, b * f)
+
+def heatmap_v2(df, fname=None, caption=True, ax=None, save=True):
+    """Refined FBA+AI heatmap. Changes vs nb71_lib.heatmap:
+       (1) no title; (2) y-labels = df['short'] gene names (solid black) with df['dloc'] locus in grey
+       to the right; (3) no per-source colour/bold on the labels;
+       (4) crimson FBA columns + blackberry AI column (see FBA_CMAP / AI_CMAP)."""
+    MODc = MOD_COLORS
     gmraw, gmmag = NB._STATE["gmraw"], NB._STATE["gmmag"]
     d = df.copy()
     d["_bri"] = [max([gmmag[m].get(r.blue_gene, 0.0) for m in COLS]
@@ -197,49 +220,55 @@ def heatmap_v2(df, fname=None, palette="uw", caption=True, ax=None, save=True):
         elif r["ai_flag"]: Cc[i, len(COLS)] = 0.10
 
     own = ax is None
-    if own: fig, ax = plt.subplots(figsize=(9.8, max(4.5, 0.33 * n + 1.6)))
+    if own: fig, ax = plt.subplots(figsize=(11.6, max(6.0, 0.55 * n + 1.9)))
     else: fig = ax.figure
 
-    coolcm = pal["fba"].copy(); coolcm.set_bad((0, 0, 0, 0))
+    coolcm = FBA_CMAP.copy(); coolcm.set_bad((0, 0, 0, 0))       # crimson FBA columns
     ax.imshow(np.ma.masked_invalid(np.where(np.arange(ncol) < len(COLS), Cc, np.nan)),
               cmap=coolcm, vmin=0, vmax=1, aspect="auto")
-    warmcm = pal["ai"].copy(); warmcm.set_bad((0, 0, 0, 0))
+    warmcm = AI_CMAP.copy(); warmcm.set_bad((0, 0, 0, 0))         # blackberry AI column
     so = np.full((n, ncol), np.nan); so[:, len(COLS)] = Cc[:, len(COLS)]
     ax.imshow(np.ma.masked_invalid(so), cmap=warmcm, vmin=0, vmax=1, aspect="auto")
     for i in range(n):
         for j in range(ncol):
             if not np.isnan(V[i, j]):
-                ax.text(j, i, f"{V[i, j]:.2f}", ha="center", va="center", fontsize=8,
-                        color="white" if Cc[i, j] > 0.55 else "#222")
-    ax.set_xticks(range(ncol)); ax.set_xticklabels(COLS + ["AI prediction\n(norm. score)"], fontsize=9)
+                ax.text(j, i, f"{V[i, j]:.2f}", ha="center", va="center", fontsize=13,
+                        color="white" if Cc[i, j] > 0.5 else "#111")
+    ax.set_xticks(range(ncol)); ax.set_xticklabels(COLS + ["AI prediction"], fontsize=17.5, color="#111")
 
-    # --- CHANGE 2: y-labels = shorthand gene name (df['short']) ---
-    ax.set_yticks(range(n)); ax.set_yticklabels(R.short, fontsize=7.6)
-    # --- CHANGE 3: all y-labels solid black, normal weight (drop per-source colour + bold) ---
-    for lbl in ax.get_yticklabels():
-        lbl.set_color("black"); lbl.set_fontweight("normal")
+    # --- CHANGE 2+3: two-column y-labels -> gene symbol (near-black) + locus (muted grey) to its right.
+    # Both columns are right-aligned at fixed x (axes-fraction), so loci form a tidy column against the axis.
+    ax.set_yticks(range(n)); ax.set_yticklabels([])
+    tr = ax.get_yaxis_transform()          # x in axes-fraction, y in data coordinates
+    for i, r in R.iterrows():
+        ax.text(-0.008, i, r["dloc"],  transform=tr, ha="right", va="center", fontsize=11.5, color="#555555")
+        ax.text(-0.150, i, r["short"], transform=tr, ha="right", va="center", fontsize=14, color="#000000")
 
-    for x in range(1, ncol): ax.axvline(x - 0.5, color="white", lw=2.5)
-    ax.axvline(len(COLS) - 0.5, color="#888", lw=2.5); ax.tick_params(length=0)
+    # tiled grid: thin white separators between every row and column
+    for i in range(1, n): ax.hlines(i - 0.5, -0.5, ncol - 0.5, color="white", lw=1.6)
+    for x in range(1, ncol): ax.axvline(x - 0.5, color="white", lw=3.2)
+    ax.axvline(len(COLS) - 0.5, color="#c9c9c9", lw=3.2); ax.tick_params(length=0)
     for s in ax.spines.values(): s.set_visible(False)
 
-    xbar = ncol - 0.5 + 0.16; xtxt = ncol - 0.5 + 0.42; y0 = 0
+    xbar = ncol - 0.5 + 0.16; xtxt = ncol - 0.5 + 0.44; y0 = 0
     for key, (t1, t2), sub in blocks:
         y1 = y0 + len(sub) - 1
-        ax.plot([xbar, xbar], [y0 - 0.32, y1 + 0.32], color=MODc[key], lw=6.5,
+        ax.plot([xbar, xbar], [y0 - 0.30, y1 + 0.30], color=MODc[key], lw=8.5,
                 solid_capstyle="round", clip_on=False)
         ym = (y0 + y1) / 2.0
-        ax.text(xtxt, ym - (0.18 if t2 else 0), t1, color=MODc[key], fontsize=9.4,
+        ax.text(xtxt, ym - (0.20 if t2 else 0), t1, color=_darken(MODc[key]), fontsize=15.5,
                 fontweight="bold", va="center", ha="left", clip_on=False)
-        if t2: ax.text(xtxt, ym + 0.42, t2, color="#6b6b6b", fontsize=8.0, va="center", ha="left", clip_on=False)
-        ax.axhline(y1 + 0.5, color="#ededed", lw=1.0); y0 = y1 + 1
+        if t2: ax.text(xtxt, ym + 0.50, t2, color="#3f3f3f", fontsize=12.5, va="center", ha="left", clip_on=False)
+        if y1 + 0.5 < n - 0.01: ax.axhline(y1 + 0.5, color="#d8d8d8", lw=1.6)   # module boundary (over row lines)
+        y0 = y1 + 1
 
-    # --- CHANGE 1: no title (set_title deliberately omitted) ---
+    # --- CHANGE 1: no title, and no top caption (both deliberately omitted) ---
     if caption:
-        ax.text(0.0, 1.0 + 0.5 / max(n, 8),
-                "Cells: blue = FBA within-method strength (gene-level, per method)  ·  "
-                "orange = AI literature-prior score (0-1)",
-                transform=ax.transAxes, ha="left", va="bottom", fontsize=6.8, style="italic", color="#777")
+        ax.text(0.0, 1.0 + 0.6 / max(n, 8),
+                "Cell shade ∝ signal strength   ·   crimson = FBA method (per-column)   ·   "
+                "blackberry = AI literature prior (0–1)",
+                transform=ax.transAxes, ha="left", va="bottom", fontsize=9, style="italic", color="#555555")
+    ax.set_ylim(n - 0.5, -0.5)
     if own and save and fname:
         for ext in ("png", "svg"):
             fig.savefig(L.FIG / f"{fname}.{ext}", bbox_inches="tight", dpi=170,
@@ -252,7 +281,7 @@ def heatmap_v2(df, fname=None, palette="uw", caption=True, ax=None, save=True):
 
 Written to `Results/nb60_targets/figures/nb04_downselected_refined.{png,svg}` — a **new** file; the NB03
 headline (`nb71_downselected.*`) is left untouched.'''),
-('code', r'''heatmap_v2(df, "nb04_downselected_refined", palette="uw")'''),
+('code', r'''heatmap_v2(df, "nb04_downselected_refined", caption=False)   # caption=True adds a small colour-legend line at the top'''),
 
 ('markdown', r'''## Part 3 · Roadmap — alternative ways to portray this data
 
