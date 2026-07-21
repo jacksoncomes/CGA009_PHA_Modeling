@@ -44,7 +44,8 @@ symbols (`accA`→`accD`, `sdhA`→`sdhB`) and **seven regulator rows whose RPA 
 gene** (`phaZ`, `phaR`, `glnB`, `glnK`, `ntrB`, `nifA`, `regB`); those corrections are in **Part 1b**.
 
 Outputs are written with a **new `nb04_` prefix** so the NB03 figure (`nb71_downselected.*`) is never
-overwritten. Everything downstream of the figure (the roadmap for alternative encodings) is in Part 3.'''),
+overwritten. **Part 3** adds a second view — an area-proportional 4-set Euler diagram of how the four
+methods' hits on the 41 targets overlap.'''),
 
 ('markdown', r'''## Part 0 · Load the data and apply the downselection
 
@@ -283,29 +284,96 @@ Written to `Results/nb60_targets/figures/nb04_downselected_refined.{png,svg}` �
 headline (`nb71_downselected.*`) is left untouched.'''),
 ('code', r'''heatmap_v2(df, "nb04_downselected_refined", caption=False)   # caption=True adds a small colour-legend line at the top'''),
 
-('markdown', r'''## Part 3 · Roadmap — alternative ways to portray this data
+('markdown', r'''## Part 3 · Method-overlap Euler diagram
 
-The heatmap answers *"which method(s) flagged each gene, and how strongly"* but has weaknesses worth
-prototyping alternatives against:
+A second view of the same 41 targets: an **area-proportional 4-set Euler diagram** of which methods flag
+which genes. Each ellipse is one method; its **area is proportional to how many of the 41 it flags**
+(FVSEOF 26, FluxRETAP 26, CASOP 8, AI 18) and the overlaps are least-squares-fit so shared counts read as
+shared area (all four ellipses stay proportional; the shapes vary to make every region fit). A gene counts
+toward a method if it has a value in that method's column — for AI, that means it carries an AI literature
+prior. The ellipse geometry is **pre-fit and pinned** (`EU_ELL`) so the figure reproduces exactly and
+instantly; the raw fit is a `scipy` optimisation over the region areas.
 
-- **Two incomparable colour scales** (FBA within-method strength vs AI prior) sit side by side and invite a
-  false apples-to-apples read; the FBA cells are *within-method ranks*, not cross-method-comparable.
-- **Empty cells are ambiguous** — "not flagged by this method" vs "flagged but near-zero" look similar.
-- **Source structure** (FBA-only / FBA+AI consensus / AI-only) is no longer encoded now that labels are
-  uniform black — a candidate to re-add as a small glyph or a left-edge marker if wanted.
+**Reads:** FVSEOF and FluxRETAP are nearly identical (both flux-response — they share 21 of ~26 each, the
+big central lens); **AI adds 9 unique** model-blind regulators (bottom-right); CASOP is the most selective;
+and **`pta` is the one target all four methods agree on** (the central `1`). Written to
+`Results/nb60_targets/figures/nb04_method_overlap_euler.{png,svg}`.'''),
+('code', r'''from matplotlib.patches import Ellipse as _Ell
+from scipy import ndimage as _ndi
+from collections import Counter as _Counter
+import math as _m
 
-Candidate encodings to try next (each its own cell/function, same 41-gene frame):
+EU_SETS = ["FVSEOF", "FluxRETAP", "CASOP", "AI"]
+EU_COL  = {"FVSEOF": "#c56b76", "FluxRETAP": "#8e3743", "CASOP": "#a4564a", "AI": "#6e4368"}  # target-list colours
+# pre-fit ellipse geometry (cx, cy, semi-a, semi-b, theta_rad): area ∝ set size, overlaps fit to the counts
+EU_ELL = [(0.39071, 0.47122, 0.62588, 0.30014,  0.00003),   # FVSEOF
+          (0.35794, 0.50596, 0.50334, 0.37321, -0.30044),   # FluxRETAP
+          (0.70798, 0.67333, 0.21874, 0.26424,  0.00135),   # CASOP
+          (1.03298, 0.39073, 0.47270, 0.27512, -0.22116)]   # AI
 
-1. **Method-support dot matrix** — a dot per (gene × method), size = |score|, colour = method family; makes
-   "how many methods" and consensus pop, and sidesteps the two-colour-scale problem.
-2. **Diverging consensus bar** — one bar per gene: FBA consensus score left, AI prior right, so the two
-   evidence streams are visually separated and rank-ordered.
-3. **Grouped small-multiples** — one mini-panel per module, genes ranked within; foregrounds the biological
-   strategy over the flat 41-row list.
-4. **Evidence scatter** — x = FBA consensus, y = AI prior, marker = source; the top-right quadrant is the
-   double-supported set at a glance.
+_gm = NB._STATE["gmraw"]
+def _member(r):    # which methods flag this target (F, R, C, A)
+    bg = r.blue_gene
+    return (bg in _gm["FVSEOF"], bg in _gm["FluxRETAP"], bg in _gm["CASOP"], r.ai_pred == r.ai_pred)
+_cnt = _Counter(_member(r) for _, r in df.iterrows())
+print("set sizes:", {EU_SETS[i]: sum(m[i] for m in _cnt.elements()) for i in range(4)}, "| total", sum(_cnt.values()))
 
-These are intentionally left as stubs — this pass locks the refined heatmap first.'''),
+def _inside(px, py, e):
+    cx, cy, a, b, th = e; ct, st = _m.cos(th), _m.sin(th)
+    dx, dy = px - cx, py - cy; xr = dx*ct + dy*st; yr = -dx*st + dy*ct
+    return (xr/a)**2 + (yr/b)**2 <= 1.0
+
+fig, ax = plt.subplots(figsize=(9.4, 8.8))
+for e, s in zip(EU_ELL, EU_SETS):
+    cx, cy, a, b, th = e
+    ax.add_patch(_Ell((cx, cy), 2*a, 2*b, angle=_m.degrees(th), facecolor=EU_COL[s],
+                      alpha=0.46, edgecolor=EU_COL[s], lw=2.2, zorder=1))
+# region grid -> each intersection count at its region's most-interior point
+NG = 1000
+gx = np.linspace(-0.35, 1.35, NG); gy = np.linspace(-0.30, 1.30, NG); GX, GY = np.meshgrid(gx, gy)
+_codeg = np.zeros((NG, NG), int)
+for i, e in enumerate(EU_ELL): _codeg += _inside(GX, GY, e).astype(int) << i
+_labels = []
+for code, n in _cnt.items():
+    if not any(code): continue
+    ci = sum((int(b) << i) for i, b in enumerate(code)); reg = (_codeg == ci)
+    if reg.sum() < 25: continue
+    dt = _ndi.distance_transform_edt(reg); iy, ix = np.unravel_index(np.argmax(dt), dt.shape)
+    _labels.append([gx[ix], gy[iy], str(n)])
+# nudge apart any two count-labels sitting too close (keeps overlapping regions' numbers readable)
+_pos = np.array([[l[0], l[1]] for l in _labels], float); _MIND = 0.080
+for _ in range(300):
+    _moved = False
+    for u in range(len(_pos)):
+        for v in range(u+1, len(_pos)):
+            dd = _pos[u] - _pos[v]; dist = _m.hypot(*dd)
+            if 1e-9 < dist < _MIND:
+                w = dd/dist; sh = (_MIND-dist)/2; _pos[u] += w*sh; _pos[v] -= w*sh; _moved = True
+    if not _moved: break
+for (_, _, txt), (px, py) in zip(_labels, _pos):
+    ax.text(px, py, txt, ha="center", va="center", fontsize=19, fontweight="bold", color="#101010", zorder=3)
+# method names off each ellipse's most-exposed boundary point (out in open space)
+_tt = np.linspace(0, 2*np.pi, 1440)
+for i, s in enumerate(EU_SETS):
+    cx, cy, aa, bb, th = EU_ELL[i]; ct, st = _m.cos(th), _m.sin(th)
+    bx = cx + aa*np.cos(_tt)*ct - bb*np.sin(_tt)*st; by = cy + aa*np.cos(_tt)*st + bb*np.sin(_tt)*ct
+    clr = np.full(_tt.shape, np.inf)
+    for j, ej in enumerate(EU_ELL):
+        if j == i: continue
+        cxj, cyj, aj, bj, tj = ej; cjt, sjt = _m.cos(tj), _m.sin(tj)
+        dxr = (bx-cxj)*cjt + (by-cyj)*sjt; dyr = -(bx-cxj)*sjt + (by-cyj)*cjt
+        clr = np.minimum(clr, (dxr/aj)**2 + (dyr/bj)**2 - 1.0)
+    k = int(np.argmax(clr)); dv = np.array([bx[k]-cx, by[k]-cy]); dv = dv/(np.hypot(*dv)+1e-9)
+    p = np.array([bx[k], by[k]]) + dv*0.10
+    ha = "left" if dv[0] > 0.3 else ("right" if dv[0] < -0.3 else "center")
+    va = "bottom" if dv[1] > 0.3 else ("top" if dv[1] < -0.3 else "center")
+    ax.text(p[0], p[1], s, ha=ha, va=va, fontsize=19, fontweight="bold", color=EU_COL[s], zorder=4, clip_on=False)
+_xy = np.array([[e[0], e[1]] for e in EU_ELL]); _am = max(e[2] for e in EU_ELL)
+ax.set_xlim(_xy[:,0].min()-_am-0.28, _xy[:,0].max()+_am+0.28); ax.set_ylim(_xy[:,1].min()-_am-0.24, _xy[:,1].max()+_am+0.24)
+ax.set_aspect("equal"); ax.axis("off")
+for ext in ("png", "svg"):
+    fig.savefig(L.FIG / f"nb04_method_overlap_euler.{ext}", bbox_inches="tight", dpi=170, facecolor="white")
+print("saved", L.FIG / "nb04_method_overlap_euler.png"); plt.show()'''),
 ]
 
 nb = nbf.v4.new_notebook()
