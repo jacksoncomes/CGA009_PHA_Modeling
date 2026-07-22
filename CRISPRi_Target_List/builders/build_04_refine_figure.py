@@ -235,7 +235,8 @@ def heatmap_v2(df, fname=None, caption=True, ax=None, save=True):
             if not np.isnan(V[i, j]):
                 ax.text(j, i, f"{V[i, j]:.2f}", ha="center", va="center", fontsize=13,
                         color="white" if Cc[i, j] > 0.5 else "#111")
-    ax.set_xticks(range(ncol)); ax.set_xticklabels(COLS + ["AI prediction"], fontsize=17.5, color="#111")
+    _xlab = ["CFSA" if c == "CASOP" else c for c in COLS]   # display: the CASOP column is a CFSA-style sampling method
+    ax.set_xticks(range(ncol)); ax.set_xticklabels(_xlab + ["LLM"], fontsize=17.5, color="#111")
 
     # --- CHANGE 2+3: two-column y-labels -> gene symbol (near-black) + locus (muted grey) to its right.
     # Both columns are right-aligned at fixed x (axes-fraction), so loci form a tidy column against the axis.
@@ -259,7 +260,7 @@ def heatmap_v2(df, fname=None, caption=True, ax=None, save=True):
         ym = (y0 + y1) / 2.0
         ax.text(xtxt, ym - (0.20 if t2 else 0), t1, color=_darken(MODc[key]), fontsize=15.5,
                 fontweight="bold", va="center", ha="left", clip_on=False)
-        if t2: ax.text(xtxt, ym + 0.50, t2, color="#3f3f3f", fontsize=12.5, va="center", ha="left", clip_on=False)
+        if t2: ax.text(xtxt, ym + 0.50, t2.replace("AI:", "LLM:"), color="#3f3f3f", fontsize=12.5, va="center", ha="left", clip_on=False)
         if y1 + 0.5 < n - 0.01: ax.axhline(y1 + 0.5, color="#d8d8d8", lw=1.6)   # module boundary (over row lines)
         y0 = y1 + 1
 
@@ -288,14 +289,14 @@ headline (`nb71_downselected.*`) is left untouched.'''),
 
 A second view of the same 41 targets: an **area-proportional 4-set Euler diagram** of which methods flag
 which genes. Each ellipse is one method; its **area is proportional to how many of the 41 it flags**
-(FVSEOF 26, FluxRETAP 26, CASOP 8, AI 18) and the overlaps are least-squares-fit so shared counts read as
+(FVSEOF 26, FluxRETAP 26, CFSA 8, LLM 18) and the overlaps are least-squares-fit so shared counts read as
 shared area (all four ellipses stay proportional; the shapes vary to make every region fit). A gene counts
-toward a method if it has a value in that method's column — for AI, that means it carries an AI literature
+toward a method if it has a value in that method's column — for LLM, that means it carries a literature
 prior. The ellipse geometry is **pre-fit and pinned** (`EU_ELL`) so the figure reproduces exactly and
 instantly; the raw fit is a `scipy` optimisation over the region areas.
 
 **Reads:** FVSEOF and FluxRETAP are nearly identical (both flux-response — they share 21 of ~26 each, the
-big central lens); **AI adds 9 unique** model-blind regulators (bottom-right); CASOP is the most selective;
+big central lens); **the LLM adds 9 unique** model-blind regulators (bottom-right); CFSA is the most selective;
 and **`pta` is the one target all four methods agree on** (the central `1`). Written to
 `Results/nb60_targets/figures/nb04_method_overlap_euler.{png,svg}`.'''),
 ('code', r'''from matplotlib.patches import Ellipse as _Ell
@@ -303,8 +304,8 @@ from scipy import ndimage as _ndi
 from collections import Counter as _Counter
 import math as _m
 
-EU_SETS = ["FVSEOF", "FluxRETAP", "CASOP", "AI"]
-EU_COL  = {"FVSEOF": "#c56b76", "FluxRETAP": "#8e3743", "CASOP": "#a4564a", "AI": "#6e4368"}  # target-list colours
+EU_SETS = ["FVSEOF", "FluxRETAP", "CFSA", "LLM"]   # display labels (CFSA = sampling method; LLM = literature-prior)
+EU_COL  = {"FVSEOF": "#c56b76", "FluxRETAP": "#8e3743", "CFSA": "#a4564a", "LLM": "#6e4368"}  # target-list colours
 # pre-fit ellipse geometry (cx, cy, semi-a, semi-b, theta_rad): area ∝ set size, overlaps fit to the counts
 EU_ELL = [(0.39071, 0.47122, 0.62588, 0.30014,  0.00003),   # FVSEOF
           (0.35794, 0.50596, 0.50334, 0.37321, -0.30044),   # FluxRETAP
